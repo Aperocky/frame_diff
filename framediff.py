@@ -1,7 +1,9 @@
 import numpy as np
 import PIL.Image as image
 import matplotlib.pyplot as plt
-import cv2
+import cv2, sys
+import matplotlib.animation as anime
+import skvideo.io as sv
 
 # Process videos as a frame generator.
 class frame_gen:
@@ -12,7 +14,7 @@ class frame_gen:
 
     def framegen(self, skipframe = 5):
         while(True):
-            for i in range(5):
+            for i in range(skipframe):
                 ret, frame = self.cap.read()
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             yield gray
@@ -64,7 +66,7 @@ class framediff:
 
     def diff(self, array_x, array_y):
         diffarray = np.abs(array_x - array_y)
-        mask = diffarray > 0.35*255
+        mask = diffarray > 0.5*255
         return mask
 
     def findmoving(self):
@@ -81,14 +83,43 @@ class framediff:
 class identify:
 
     def __init__(self, filename):
-        self.fg = frame_gen(filename)
+        self.generator = frame_gen(filename).framegen(skipframe = 2)
         self.fdiff = framediff()
+        self.setup()
+        self.dimension = self.fdiff.dimension
+        self.figure = plt.figure(figsize = (3,5))
+        self.ax = plt.Axes(self.figure, [0,0,1,1])
+        self.ax.set_axis_off()
+        self.figure.add_axes(self.ax)
 
     def setup(self):
-        
+        startarray = []
+        for i in range(3):
+            startarray.append(next(self.generator))
+        self.fdiff.set_array(*startarray)
 
+    def identify(self):
+        moving = self.fdiff.findmoving()
+        try:
+            nextframe = next(self.generator)
+        except Exception as e:
+            sys.exit()
+        self.fdiff.update_array(nextframe)
+        return moving
 
+    def start(self):
+        self.myart = self.ax.imshow(self.fdiff.array1, 'gray')
+
+    def update(self, i):
+        print(i)
+        moving = self.identify()
+        self.myart.set_data(moving)
+        return self.myart
+
+    def animate(self):
+        ani = anime.FuncAnimation(self.figure, self.update, init_func=self.start, frames=2000, interval = 25)
+        ani.save('longchange.mp4', fps=30, dpi = 120, bitrate=-1)
 
 if __name__ == '__main__':
-    vimeo = videoprocessor('video.mp4')
-    frames = vimeo.framegen()
+    moving = identify('long.mp4')
+    moving.animate()

@@ -3,7 +3,21 @@ import PIL.Image as image
 import matplotlib.pyplot as plt
 import cv2, sys
 import matplotlib.animation as anime
-import skvideo.io as sv
+import scipy.ndimage as ndim
+import os, sys
+import glob
+
+"""
+
+Written by Rocky Li @ Duke Robotics
+
+2018 - 04 - 18
+
+This is a module capable of detecting differences in array by triple frame difference method.
+Input could be a list of files or a movie.
+Output could be a list of arrays or a movie.
+
+"""
 
 # Process videos as a frame generator.
 class frame_gen:
@@ -47,9 +61,9 @@ class frame_gen:
 # Find moving with current frame by consulting the frame before and after.
 class framediff:
 
-    def __init__(self, colored = False):
+    def __init__(self, colored = False, threshold = 122):
         self.colored = colored
-        pass
+        self.thresh = threshold
 
     def set_array(self, array1, array2, array3):
         self.array1 = array1
@@ -66,7 +80,7 @@ class framediff:
 
     def diff(self, array_x, array_y):
         diffarray = np.abs(array_x - array_y)
-        mask = diffarray > 0.5*255
+        mask = diffarray > self.thresh
         return mask
 
     def findmoving(self):
@@ -74,17 +88,35 @@ class framediff:
         pre_mask = mask + self.diff(self.array1, self.array2)
         aft_mask = mask + self.diff(self.array2, self.array3)
         true_mask = np.logical_and(pre_mask, aft_mask)
+        # true_mask = self.getsuremask(true_mask)
+        print(true_mask)
         true_mask = np.logical_not(true_mask)
         masked = np.ma.array(self.array2, mask=true_mask, fill_value=0)
         moving = masked.filled()
         return moving
 
+    def getsuremask(self, mask):
+        # print(mask)
+        counts, clusters = ndim.measurements.label(mask)
+        # print(counts, clusters)
+        labels=np.arange(clusters)
+        labels += 1
+        sizes = ndim.measurements.sum(mask, counts, labels)
+        print(labels, len(labels))
+        print(sizes, len(sizes))
+        counts = counts.astype(np.float64)
+        for index, size in zip(labels, sizes):
+            size -=0.5
+            counts[counts == index] = size
+        counts = counts > 512
+        return counts
+
 # Package video processing into a nice little class
 class identify:
 
-    def __init__(self, filename):
-        self.generator = frame_gen(filename).framegen(skipframe = 2)
-        self.fdiff = framediff()
+    def __init__(self, generator):
+        self.generator = generator
+        self.fdiff = framediff(threshold = 2)
         self.setup()
         self.dimension = self.fdiff.dimension
         self.figure = plt.figure(figsize = (3,5))
@@ -102,9 +134,15 @@ class identify:
         moving = self.fdiff.findmoving()
         try:
             nextframe = next(self.generator)
+            print('PHP')
         except Exception as e:
-            sys.exit()
+            print('WHA')
+            sys.exit('IDK')
         self.fdiff.update_array(nextframe)
+        # plt.imshow(moving)
+        # plt.show()
+        print(moving)
+        print(np.sum(moving))
         return moving
 
     def start(self):
@@ -117,9 +155,44 @@ class identify:
         return self.myart
 
     def animate(self):
-        ani = anime.FuncAnimation(self.figure, self.update, init_func=self.start, frames=2000, interval = 25)
-        ani.save('longchange.mp4', fps=30, dpi = 120, bitrate=-1)
+        ani = anime.FuncAnimation(self.figure, self.update, init_func=self.start, frames=500, interval = 250)
+        ani.save('moving.mp4', fps=5, dpi = 120, bitrate=-1)
+
+# If processing images, put things here
+class loadimages:
+    #
+    def __init__(self, path, csv = False):
+        self.path = path
+        self.get_image()
+        self.csv = csv
+
+    # Set a stream of image.
+    def set_image(self, image):
+        self.image_stream = image
+
+    # Tool to get stream of images
+    def get_image(self):
+        images = glob.iglob(self.path)
+        print(glob.glob(self.path))
+        self.set_image(images)
+
+    def stream(self):
+        while(True):
+            curr_image = next(self.image_stream)
+            print(curr_image)
+            if self.csv:
+                curr_frame = np.genfromtxt(curr_image, delimiter=',')
+                curr_frame = curr_frame[:, :-1]
+                print(curr_frame)
+            else:
+                curr_frame = cv2.imread(curr_image,0)
+            yield curr_frame
+
 
 if __name__ == '__main__':
-    moving = identify('long.mp4')
+    # Movie engine on!
+    images = loadimages('Thermal_Detection_PicBase/*.txt', csv=True).stream()
+
+    frames = frame_gen('long.mp4').framegen(skipframe=2)
+    moving = identify(images)
     moving.animate()

@@ -116,7 +116,7 @@ class identify:
 
     def __init__(self, generator):
         self.generator = generator
-        self.fdiff = framediff(threshold = 2)
+        self.fdiff = framediff(threshold = 5)
         self.setup()
         self.dimension = self.fdiff.dimension
         self.figure = plt.figure(figsize = (3,5))
@@ -158,7 +158,7 @@ class identify:
         ani = anime.FuncAnimation(self.figure, self.update, init_func=self.start, frames=500, interval = 250)
         ani.save('moving.mp4', fps=5, dpi = 120, bitrate=-1)
 
-# If processing images, put things here
+# If processing images, put things as a generator
 class loadimages:
     #
     def __init__(self, path, csv = False):
@@ -191,7 +191,7 @@ class loadimages:
 
 if __name__ == '__main__':
     # Movie engine on!
-    images = loadimages('Thermal_Detection_PicBase/*.txt', csv=True).stream()
+    images = loadimages('thermal/*.png', csv=False).stream()
 
     frames = frame_gen('long.mp4').framegen(skipframe=2)
     moving = identify(images)

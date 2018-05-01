@@ -52,6 +52,8 @@ def find_subject(myframe):
 
     #isolating the largest contour
     contour_sizes = [(cv2.contourArea(contour), contour) for contour in contours]
+    detection_string = "Nothing is detected"
+    detection_detail = [0,0,0]
     if(contour_sizes!=[]):
         biggest_contour = max(contour_sizes, key=lambda x: x[0])[1]
         mask = np.zeros(image.shape, np.uint8)
@@ -60,14 +62,20 @@ def find_subject(myframe):
         # # step 5 - drap the surrounding frame
         (x,y,w,h) = cv2.boundingRect(biggest_contour)
         aspect_ratio = float(w)/h
-        print(x,y,w,h,aspect_ratio)
-        if aspect_ratio >= 1 and w>10 and h>5:
+        image = color.gray2rgb(image)
+        if aspect_ratio >= 2 and w>8 and h>3:
             cv2.rectangle(image, (x,y), (x+w,y+h), (255,0,0), 2)
-            # print(image)
-        #     cv2.imwrite('result' + str(number) + '.jpg', image)
-        #     with open ("aspect_ratio.txt", "a") as f:
-        #         f.write(str(aspect_ratio) + "\n")
-    return image
+            detection_string = "detected a Standing Human"
+            detection_detail = [w, h, aspect_ratio]
+        if aspect_ratio < 2 and w>4 and h>8:
+            cv2.rectangle(image, (x,y), (x+w,y+h), (255,0,0), 2)
+            detection_string = "detected a moving object"
+            detection_detail = [w, h, aspect_ratio]
+        print('###### DETECTION AT WORK ######')
+        print('WE THINK THAT: ')
+        print("we %s" % detection_string)
+        print('#### END OF THIS ITERATION ####')
+    return image, detection_detail
 
 if __name__ == '__main__':
     imagestream = framediff.loadimages('Thermal_Detection_PicBase/*.txt', csv=True).stream()

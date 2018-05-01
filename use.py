@@ -62,7 +62,7 @@ def find_subject(myframe):
         # # step 5 - drap the surrounding frame
         (x,y,w,h) = cv2.boundingRect(biggest_contour)
         aspect_ratio = float(w)/h
-        image = color.gray2rgb(image)
+        # image = color.gray2rgb(image)
         if aspect_ratio >= 2 and w>8 and h>3:
             cv2.rectangle(image, (x,y), (x+w,y+h), (255,0,0), 2)
             detection_string = "detected a Standing Human"
@@ -71,10 +71,12 @@ def find_subject(myframe):
             cv2.rectangle(image, (x,y), (x+w,y+h), (255,0,0), 2)
             detection_string = "detected a moving object"
             detection_detail = [w, h, aspect_ratio]
+        print()
         print('###### DETECTION AT WORK ######')
         print('WE THINK THAT: ')
         print("we %s" % detection_string)
         print('#### END OF THIS ITERATION ####')
+        print()
     return image, detection_detail
 
 if __name__ == '__main__':

@@ -65,18 +65,18 @@ def find_subject(myframe):
         # image = color.gray2rgb(image)
         if aspect_ratio >= 2 and w>8 and h>3:
             cv2.rectangle(image, (x,y), (x+w,y+h), (255,0,0), 2)
-            detection_string = "detected a Standing Human"
+            detection_string = "There was a Standing Human"
             detection_detail = [w, h, aspect_ratio]
         if aspect_ratio < 2 and w>4 and h>8:
             cv2.rectangle(image, (x,y), (x+w,y+h), (255,0,0), 2)
-            detection_string = "detected a moving object"
+            detection_string = "There was a moving object"
             detection_detail = [w, h, aspect_ratio]
-        print()
-        print('###### DETECTION AT WORK ######')
-        print('WE THINK THAT: ')
-        print("we %s" % detection_string)
-        print('#### END OF THIS ITERATION ####')
-        print()
+    print()
+    print('###### DETECTION AT WORK ######')
+    print('\tWE THINK THAT: ')
+    print("\twe %s" % detection_string)
+    print('#### END OF THIS ITERATION ####')
+    print()
     return image, detection_detail
 
 if __name__ == '__main__':

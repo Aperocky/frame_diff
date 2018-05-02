@@ -133,6 +133,7 @@ class identify:
         self.ax = plt.Axes(self.figure, [0,0,1,1])
         self.ax.set_axis_off()
         self.figure.add_axes(self.ax)
+        self.index = 1
 
     def setup(self):
         startarray = []
@@ -165,12 +166,17 @@ class identify:
             # print('WHA')
             sys.exit('IDK')
         self.fdiff.update_array(nextframe)
-        print(np.sum(moving))
+        # print(np.sum(moving))
         # Todo: edit moving
 
         # THIS IS LUKES USE.PY
         moving = use.find_subject(moving)
-        return moving
+        if not moving[1][0] == 0:
+            if not os.path.isdir('target'):
+                os.mkdir('target')
+            np.save('target/%05d' % self.index, moving[0])
+            self.index += 1
+        return moving[0]
 
 ### -----------    THIS TURNS THE WHOLE THING INTO A MOVIE     -------------###
 
@@ -241,13 +247,16 @@ class yield_images:
             return False
         latest_image = max(images, key=os.path.getctime)
         if len(images) > 100:
-            earliest = min(images, key=os.path.getctime)
-            os.remove(earliest)
-            print("Removing old image")
+            while(len(images) > 100):
+                earliest = min(images, key=os.path.getctime)
+                earliestpng = earliest.split('.')[0] + '.png'
+                os.remove(earliest)
+                os.remove(earliestpng)
+            # print("Removing old image")
         if latest_image == self.previmage:
-            print("Not new image. Waiting for input")
+            print("Waiting for input")
             return False
-        print("New image added to generator")
+        # print("New image added to generator")
         self.previmage = latest_image
         print(latest_image)
         return latest_image
@@ -267,13 +276,10 @@ class yield_images:
 
 
 if __name__ == '__main__':
+    filename = sys.argv[1]
     # Movie engine on!
-    # images = loadimages('test2/*.txt', csv=True).stream()
-    # mover = test.unit_test('sequence_1', 'testfiles')
-    # mthread = Thread(target = mover.move_files())
-    # mthread.start()
-    print("i'm running as well")
-    images = yield_images('testfiles/*.txt').stream()
+    images = loadimages('%s/*.txt' % filename, csv=True).stream()
+    # images = yield_images('testfiles/*.txt').stream()
     # frames = frame_gen('long.mp4').framegen(skipframe=2)
     moving = identify(images, name='test3')
     # while(True):

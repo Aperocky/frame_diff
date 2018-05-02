@@ -278,8 +278,8 @@ class yield_images:
 if __name__ == '__main__':
     filename = sys.argv[1]
     # Movie engine on!
-    images = loadimages('%s/*.txt' % filename, csv=True).stream()
-    # images = yield_images('testfiles/*.txt').stream()
+    # images = loadimages('%s/*.txt' % filename, csv=True).stream()
+    images = yield_images('%s/*.txt').stream()
     # frames = frame_gen('long.mp4').framegen(skipframe=2)
     moving = identify(images, name='test3')
     # while(True):

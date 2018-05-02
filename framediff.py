@@ -10,7 +10,7 @@ import glob
 import use
 import test
 import time
-from threading import Thread
+import datetime
 
 """
 
@@ -141,7 +141,7 @@ class identify:
         while(True):
             my_pic = next(self.generator)
             if my_pic is False:
-                time.sleep(0.5)
+                time.sleep(0.8)
                 continue
             else:
                 startarray.append(my_pic)
@@ -174,7 +174,7 @@ class identify:
         if not moving[1][0] == 0:
             if not os.path.isdir('target'):
                 os.mkdir('target')
-            np.save('target/%05d' % self.index, moving[0])
+            np.save('target/%05d' % (self.index) , moving[0])
             self.index += 1
         return moving[0]
 
@@ -285,4 +285,3 @@ if __name__ == '__main__':
     # while(True):
     #     print(moving.identify())
     moving.text()
-    mthread.join()
